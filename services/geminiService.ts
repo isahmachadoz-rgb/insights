@@ -3,16 +3,18 @@ import { SalesData, SalesMetrics } from '../types';
 
 const API_KEY = process.env.API_KEY;
 
-if (!API_KEY) {
-  throw new Error("API_KEY environment variable not set");
-}
+export const isApiKeySet = !!API_KEY;
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+let ai: GoogleGenAI | null = null;
+let model: Chat | null = null;
 
-const model = ai.chats.create({
-  model: 'gemini-2.5-flash',
-  config: {
-    systemInstruction: `Você é o AlphaBot, um assistente de análise de dados amigável e perspicaz. Sua missão é ajudar os usuários a entenderem suas planilhas de vendas de uma forma natural e conversacional.
+if (isApiKeySet) {
+  try {
+    ai = new GoogleGenAI({ apiKey: API_KEY! });
+    model = ai.chats.create({
+      model: 'gemini-2.5-flash',
+      config: {
+        systemInstruction: `Você é o AlphaBot, um assistente de análise de dados amigável e perspicaz. Sua missão é ajudar os usuários a entenderem suas planilhas de vendas de uma forma natural e conversacional.
 
 Sua Personalidade:
 - Prestativo e Proativo: Antecipe as necessidades do usuário. Se eles perguntarem o total de vendas, você pode, por exemplo, mencionar qual foi o mês de maior destaque.
@@ -25,20 +27,19 @@ Como você deve responder:
 - Explique o "porquê" por trás dos números de forma simples. Por exemplo: "O produto mais vendido foi o 'Laptop Pro X'. Ele se destacou principalmente pelas vendas em novembro e dezembro."
 - Ao receber uma pergunta, responda-a completamente e, se fizer sentido, ofereça um insight relacionado.
 
-Exemplos de Interação:
-
-Usuário: "Qual foi o total de vendas?"
-Sua Resposta Ideal: "O total de vendas nos períodos analisados foi de R$ 1.234.567,89. O mês de maior destaque foi dezembro, que contribuiu significativamente para esse resultado."
-
-Usuário: "Compare as vendas entre a Região Sul e Sudeste."
-Sua Resposta Ideal: "Claro. A Região Sudeste teve um desempenho superior, com R$ 500.000,00 em vendas, enquanto a Região Sul registrou R$ 350.000,00. A diferença foi impulsionada principalmente pela categoria de Eletrônicos no Sudeste."
-
 IMPORTANTE: Responda sempre em texto puro, sem usar markdown, negrito, itálico ou qualquer outro tipo de formatação.
 
 Seu objetivo é transformar dados brutos em conversas e insights valiosos, tornando a análise de dados uma tarefa fácil e agradável.
 `,
-  },
-});
+      },
+    });
+  } catch (error) {
+    console.error("Failed to initialize GoogleGenAI. Chatbot will be disabled.", error);
+    model = null; // Ensure model is null if initialization fails
+  }
+} else {
+    console.warn("API_KEY environment variable not set. Chatbot functionality will be disabled.");
+}
 
 function summarizeData(salesData: SalesData[], metrics: SalesMetrics | null): string {
   if (salesData.length === 0 || !metrics) {
@@ -68,7 +69,10 @@ ${dataContextForAI}
 }
 
 
-export const getChatbotResponse = async (chat: Chat, message: string, salesData: SalesData[], metrics: SalesMetrics | null): Promise<string> => {
+export const getChatbotResponse = async (chat: Chat | null, message: string, salesData: SalesData[], metrics: SalesMetrics | null): Promise<string> => {
+    if (!chat) {
+        return "A funcionalidade do chatbot está desativada. Verifique se a chave de API (API_KEY) está configurada corretamente no ambiente de hospedagem.";
+    }
   try {
     const dataContext = summarizeData(salesData, metrics);
     const fullPrompt = `${dataContext}\n\nUsuário: ${message}`;

@@ -6,6 +6,7 @@ import FileUpload from './components/FileUpload';
 import { SalesData, SalesMetrics } from './types';
 import { processSalesData } from './hooks/useSalesData';
 import { BotIcon } from './components/icons/BotIcon';
+import { isApiKeySet } from './services/geminiService';
 
 const App: React.FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<SalesData[]>([]);
@@ -27,6 +28,13 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-900 font-sans">
       <Header />
       <main className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
+        {!isApiKeySet && (
+           <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg relative" role="alert">
+            <strong className="font-bold">Erro de Configuração:</strong>
+            <span className="block sm:inline ml-2">A chave de API do Gemini não foi encontrada. O chatbot está desativado.</span>
+            <p className="text-sm text-red-400 mt-1">Para corrigir, configure a variável de ambiente <code className="bg-slate-700 px-1 py-0.5 rounded text-red-300">API_KEY</code> no seu provedor de hospedagem (ex: Vercel).</p>
+           </div>
+        )}
         <FileUpload
           uploadedFiles={uploadedFiles}
           onFilesChange={handleFilesChange}
@@ -34,7 +42,7 @@ const App: React.FC = () => {
         <Dashboard metrics={salesMetrics} hasFiles={uploadedFiles.length > 0} />
       </main>
       
-      {!isChatOpen && (
+      {isApiKeySet && !isChatOpen && (
          <div className="fixed bottom-4 right-4 md:bottom-8 md:right-8 z-20">
           <button
             onClick={() => setIsChatOpen(true)}
@@ -46,7 +54,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {isChatOpen && (
+      {isApiKeySet && isChatOpen && (
         <Chatbot
           salesData={uploadedFiles}
           metrics={salesMetrics}
