@@ -8,6 +8,13 @@ import { processSalesData } from './hooks/useSalesData';
 import { BotIcon } from './components/icons/BotIcon';
 import { isApiKeySet } from './services/geminiService';
 
+const WarningIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" {...props}>
+        <path fillRule="evenodd" d="M8.257 3.099c.636-1.026 2.252-1.026 2.888 0l6.238 10.028c.636 1.026-.178 2.373-1.444 2.373H3.463c-1.266 0-2.08-1.347-1.444-2.373L8.257 3.099zM9 13a1 1 0 112 0 1 1 0 01-2 0zm1-6a1 1 0 00-1 1v3a1 1 0 002 0V8a1 1 0 00-1-1z" clipRule="evenodd" />
+    </svg>
+);
+
+
 const App: React.FC = () => {
   const [uploadedFiles, setUploadedFiles] = useState<SalesData[]>([]);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -29,11 +36,23 @@ const App: React.FC = () => {
       <Header />
       <main className="p-4 md:p-8 max-w-7xl mx-auto space-y-8">
         {!isApiKeySet && (
-           <div className="bg-red-900/50 border border-red-700 text-red-300 px-4 py-3 rounded-lg relative" role="alert">
-            <strong className="font-bold">Erro de Configuração:</strong>
-            <span className="block sm:inline ml-2">A chave de API do Gemini não foi encontrada. O chatbot está desativado.</span>
-            <p className="text-sm text-red-400 mt-1">Para corrigir, configure a variável de ambiente <code className="bg-slate-700 px-1 py-0.5 rounded text-red-300">API_KEY</code> no seu provedor de hospedagem (ex: Vercel).</p>
-           </div>
+           <div className="bg-yellow-900/30 border border-yellow-700 text-yellow-200 px-4 py-3 rounded-lg relative animate-slide-in" role="alert">
+              <div className="flex items-start">
+                  <div className="py-1">
+                      <WarningIcon className="h-6 w-6 text-yellow-400 mr-4"/>
+                  </div>
+                  <div>
+                      <strong className="font-bold block text-yellow-300">Ação Necessária: Configure a Chave de API</strong>
+                      <span className="block mt-1">O recurso de chatbot (AlphaBot) está desativado porque a chave de API do Google Gemini não foi configurada.</span>
+                      <p className="text-sm text-yellow-300 mt-2">
+                          Para ativar o chatbot, você precisa adicionar sua chave de API como uma variável de ambiente chamada <code className="bg-slate-700 px-1.5 py-1 rounded text-yellow-200 font-mono">API_KEY</code> nas configurações do seu projeto de hospedagem.
+                      </p>
+                      <a href="https://vercel.com/docs/projects/environment-variables" target="_blank" rel="noopener noreferrer" className="text-sm font-semibold text-cyan-400 hover:text-cyan-300 mt-2 inline-block">
+                          Aprenda como configurar no Vercel &rarr;
+                      </a>
+                  </div>
+              </div>
+          </div>
         )}
         <FileUpload
           uploadedFiles={uploadedFiles}
