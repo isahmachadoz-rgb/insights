@@ -1,0 +1,5 @@
+{
+  "name": "Alpha Insights - Sales Dashboard",
+  "description": "An intelligent dashboard with a chatbot to help Alpha Insights' sales team analyze monthly performance data intuitively. Upload up to 12 of your own sales spreadsheets (in CSV format) to see key metrics and chat with an AI assistant for deeper insights.",
+  "requestFramePermissions": []
+}
