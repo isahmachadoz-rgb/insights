@@ -1,17 +1,43 @@
 import { GoogleGenAI, Chat } from "@google/genai";
 import { SalesData, SalesMetrics } from '../types';
 
-const API_KEY = process.env.API_KEY;
+const API_KEY_STORAGE_KEY = 'gemini-api-key';
 
-export const isApiKeySet = !!API_KEY;
-
-let ai: GoogleGenAI | null = null;
-let model: Chat | null = null;
-
-if (isApiKeySet) {
+// --- API Key Management ---
+export const saveApiKey = (apiKey: string): void => {
   try {
-    ai = new GoogleGenAI({ apiKey: API_KEY! });
-    model = ai.chats.create({
+    localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
+  } catch (error) {
+    console.error("Could not save API key to local storage", error);
+  }
+};
+
+export const getApiKey = (): string | null => {
+  try {
+    // First, try local storage
+    const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
+    if (storedKey) {
+      return storedKey;
+    }
+    // Fallback to environment variable
+    return process.env.API_KEY || null;
+  } catch (error) {
+    console.error("Could not retrieve API key", error);
+    // Try environment variable as a last resort if localStorage fails
+    return process.env.API_KEY || null;
+  }
+};
+
+export const isApiKeyAvailable = (): boolean => {
+  return !!getApiKey();
+};
+
+
+// --- Chat Session Management ---
+export const createChatSession = (apiKey: string): Chat | null => {
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const chat = ai.chats.create({
       model: 'gemini-2.5-flash',
       config: {
         systemInstruction: `Você é o AlphaBot, um assistente de análise de dados amigável e perspicaz. Sua missão é ajudar os usuários a entenderem suas planilhas de vendas de uma forma natural e conversacional.
@@ -33,13 +59,13 @@ Seu objetivo é transformar dados brutos em conversas e insights valiosos, torna
 `,
       },
     });
+    return chat;
   } catch (error) {
-    console.error("Failed to initialize GoogleGenAI. Chatbot will be disabled.", error);
-    model = null; // Ensure model is null if initialization fails
+    console.error("Failed to initialize GoogleGenAI. Please check your API key.", error);
+    return null;
   }
-} else {
-    console.warn("API_KEY environment variable not set. Chatbot functionality will be disabled.");
-}
+};
+
 
 function summarizeData(salesData: SalesData[], metrics: SalesMetrics | null): string {
   if (salesData.length === 0 || !metrics) {
@@ -71,7 +97,7 @@ ${dataContextForAI}
 
 export const getChatbotResponse = async (chat: Chat | null, message: string, salesData: SalesData[], metrics: SalesMetrics | null): Promise<string> => {
     if (!chat) {
-        return "A funcionalidade do chatbot está desativada. Verifique se a chave de API (API_KEY) está configurada corretamente no ambiente de hospedagem.";
+        return "A sessão do chatbot não foi iniciada. Verifique se a chave de API está configurada corretamente.";
     }
   try {
     const dataContext = summarizeData(salesData, metrics);
@@ -81,8 +107,9 @@ export const getChatbotResponse = async (chat: Chat | null, message: string, sal
     return response.text ?? "Desculpe, não consegui processar a resposta. Tente novamente.";
   } catch (error) {
     console.error("Error fetching response from Gemini:", error);
-    return "Desculpe, ocorreu um erro ao me comunicar com a IA. Por favor, tente novamente mais tarde.";
+    if (error instanceof Error && error.message.includes('API key not valid')) {
+       return "Sua chave de API parece ser inválida. Por favor, verifique e tente novamente.";
+    }
+    return "Desculpe, ocorreu um erro ao me comunicar com a IA. Verifique sua chave de API e a conexão com a internet.";
   }
 };
-
-export { model };

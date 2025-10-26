@@ -1,10 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { Chat } from '@google/genai';
 import { ChatMessage, SalesData, SalesMetrics } from '../types';
-import { getChatbotResponse, model } from '../services/geminiService';
+import { getChatbotResponse } from '../services/geminiService';
 import { SendIcon } from './icons/SendIcon';
 import { BotIcon } from './icons/BotIcon';
 
 interface ChatbotProps {
+    chatInstance: Chat | null;
     salesData: SalesData[];
     metrics: SalesMetrics | null;
     onClose: () => void;
@@ -17,7 +19,7 @@ const CloseIcon: React.FC<React.SVGProps<SVGSVGElement>> = (props) => (
   </svg>
 );
 
-const Chatbot: React.FC<ChatbotProps> = ({ salesData, metrics, onClose }) => {
+const Chatbot: React.FC<ChatbotProps> = ({ chatInstance, salesData, metrics, onClose }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     { sender: 'bot', text: 'Olá! Sou o AlphaBot. Como posso ajudar a analisar seus dados de vendas hoje?' }
   ]);
@@ -46,7 +48,7 @@ const Chatbot: React.FC<ChatbotProps> = ({ salesData, metrics, onClose }) => {
     setIsLoading(true);
 
     try {
-        const botResponseText = await getChatbotResponse(model, messageText, salesData, metrics);
+        const botResponseText = await getChatbotResponse(chatInstance, messageText, salesData, metrics);
         const botMessage: ChatMessage = { sender: 'bot', text: botResponseText };
         setMessages(prev => [...prev, botMessage]);
     } catch (error) {
