@@ -2,30 +2,17 @@ import { GoogleGenAI, Chat } from "@google/genai";
 import { SalesData, SalesMetrics } from '../types';
 
 const API_KEY_STORAGE_KEY = 'gemini-api-key';
+const HARDCODED_API_KEY = 'AIzaSyBdNHXzqdosWszfoj2DPJXDVCnZsoMndVU';
 
 // --- API Key Management ---
 export const saveApiKey = (apiKey: string): void => {
-  try {
-    localStorage.setItem(API_KEY_STORAGE_KEY, apiKey);
-  } catch (error) {
-    console.error("Could not save API key to local storage", error);
-  }
+  // A chave agora está integrada, então não é mais necessário salvá-la.
+  // Esta função é mantida para evitar erros em componentes que a chamam.
 };
 
 export const getApiKey = (): string | null => {
-  try {
-    // First, try local storage
-    const storedKey = localStorage.getItem(API_KEY_STORAGE_KEY);
-    if (storedKey) {
-      return storedKey;
-    }
-    // Fallback to environment variable
-    return process.env.API_KEY || null;
-  } catch (error) {
-    console.error("Could not retrieve API key", error);
-    // Try environment variable as a last resort if localStorage fails
-    return process.env.API_KEY || null;
-  }
+  // Retorna diretamente a chave de API fornecida.
+  return HARDCODED_API_KEY;
 };
 
 export const isApiKeyAvailable = (): boolean => {
